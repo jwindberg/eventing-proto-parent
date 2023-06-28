@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package api.eventing.model;
+
+option go_package = "eventing/types";
+
+option java_multiple_files = true;
+option java_package = "com.avaya.adf.model";
+
+// Origin represents a Contact Center
+enum Origin {
+    UNSPECIFIED = 0;           // The origin is unspecified
+    AXP = 1;                   // The origin is the AXP CC
+    ELITE = 2;                 // The origin is the Elite CC
+}

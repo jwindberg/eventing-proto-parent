@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package api.eventing.model.resource;
+
+import "eventing/model/common.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "eventing/types";
+
+option java_multiple_files = true;
+option java_package = "com.avaya.adf.model.resource";
+
+// WriteResourceRequest defines the payload containing all the necessary fields used for writing a Resource event
+message WriteResourceRequest {
+    MonitoredState monitored_state = 1;                             // The MonitoredState of the Resource - E.g. ACQUIRED, DEACQUIRED
+    ResourceState state = 2;                                        // The state of the Resource - E.g. READY, NOT_READY 
+    string state_reason = 3;                                        // User friendly description of state reason
+    string login_id = 4;                                            // Account ID used for Resource login
+    string provider_id = 5;                                         // Provider ID leasing the Resource
+    string resource_address = 6;                                    // Address or station ID of the Resource
+    google.protobuf.Timestamp last_state_change_time = 7;           // Time at which the Resource state was last updated
+    map<string, Channel> channels = 8;                              // Media channel types associated with the Resource
+    string tenant_id = 9;                                           // The ID of the associated tenant
+	string device_id = 10;                                          // Device ID of the Voice Resource
+    eventing.model.Origin origin = 11;                              // The origin associated with the Resource
+	string trace_id = 16;                                           // Trace ID field for open telemetry
+}
+
+// Channel represents a media channel upon which a Resource can make and receive Interactions
+message Channel {
+    // Type defines a list of supported Channel types
+    enum Type {
+        UNSPECIFIED = 0;										    // Channel type unspecified
+        VOICE = 1;											        // Channel type supports voice
+        VIDEO = 2;											        // Channel type supports video
+        WEBCHAT = 3;										        // Channel type supports webchat
+        EMAIL = 4;											        // Channel type supports email
+        SMS = 5;											        // Channel type supports SMS
+        SOCIAL = 6;											        // Channel type supports social
+        OUTBOUND = 7;										        // Channel type supports outbound
+        GENERIC = 8;										        // Channel type supports generic
+        MESSAGING = 9;										        // Channel type supports async messaging
+        PP_OUTBOUND = 10;									        // Channel type supports preview outbound
+        DESKTOP = 16; 										        // Internal Channel type used to allow session activation without a dedicated Resource
+    }
+    Type channel_type = 1;                                          // The type of Channel
+    ResourceState state = 2;                                        // The state of the Channel
+    string state_reason = 3;                                        // Reason associated with the state of the Channel
+    map<string, bool> capabilities = 4;                             // Capabilities applicable to the Channel
+}
+
+// MonitoredState defines a list of Monitored states representing whether or not a Resource has been leased or obtained for work
+enum MonitoredState {
+    MONITOREDSTATE_UNSPECIFIED = 0;				                    // Monitored state unspecified
+    MONITOREDSTATE_ACQUIRED = 1;				                    // Resource is being observed
+    MONITOREDSTATE_PENDING_DEACQUIRE = 2;		                    // Resource is awaiting a state change to MONITOREDSTATE_DEACQUIRED
+    MONITOREDSTATE_DEACQUIRED = 3;				                    // Resource is not being observed
+    MONITOREDSTATE_PENDING_ACQUIRE = 4;		                        // Resource is awaiting a state change to MONITOREDSTATE_ACQUIRED
+}
+
+// ResourceState defines a list of Resource states representing whether or not a Resource can receieve work
+enum ResourceState {
+    RESOURCESTATE_UNSPECIFIED = 0; 								    // Resource state unspecified
+    RESOURCESTATE_LOGGED_OUT = 1; 							        // Resource is logged out and cannot receive work
+    RESOURCESTATE_NOT_READY = 2; 								    // Resource is unable to receive work
+    RESOURCESTATE_READY = 3; 									    // Resource is able to receive work
+    // Omitting field number - 4 as enum PENDING_NOT_READY in internal model is deprecated in favour of NOT_READY_PENDING
+    // Field numbers must align - https://developers.google.com/protocol-buffers/docs/overview#assigning_field_numbers
+    RESOURCESTATE_AFTER_CONTACT_WORK = 5; 					        // Additional work is being completed for the previous Interaction on the Resource, and therefore can temporarily cannot receive work
+    RESOURCESTATE_AFTER_CONTACT_WORK_PENDING = 6; 			        // Resource is awaiting a state change to RESOURCESTATE_AFTER_CONTACT_WORK
+    RESOURCESTATE_COMPLETE = 7; 								    // Resource session has been completed
+    RESOURCESTATE_NOT_READY_PENDING = 8; 						    // Resource is awaiting a state change to RESOURCESTATE_NOT_READY
+	RESOURCESTATE_LOGOUT_PENDING = 9;								// Resource is awaiting a state change to RESOURCESTATE_LOGGED_OUT
+}

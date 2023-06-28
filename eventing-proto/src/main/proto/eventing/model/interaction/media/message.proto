@@ -1,0 +1,246 @@
+syntax = "proto3";
+
+package api.eventing.model.interaction.media;
+
+import "eventing/model/interaction/interaction.proto";
+import "eventing/model/resource/resource.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "eventing/types";
+
+option java_multiple_files = true;
+option java_package = "com.avaya.adf.model.interaction";
+
+// WriteMediaMessageRequest defines the payload containing all the necessary fields to write an Interaction Media Message event
+message WriteMediaMessageRequest {
+    string external_interaction_id = 1;                             // The external Interaction ID
+    string tenant_id = 2;                                           // The ID of the associated tenant
+
+    // Message contains one of the specified types - ChatMessage or EmailMessage
+    oneof message {
+        ChatMessage chat_message = 3;                               // ChatMessage contains a multi media message payload
+        EmailMessage email_message = 4;                             // EmailMessage contains an email message payload
+    }
+	string trace_id = 16;                                           // Trace ID field for open telemetry
+}
+
+// ChatMessage represents a multimedia message of various supported types
+message ChatMessage {
+    string external_id = 1;                                         // Unique ID for the ChatMessage
+    string external_media_id = 2;                                   // The ID of the Media associated with the Message
+    string subject = 3;                                             // The Message subject
+    string body = 4;                                                // The payload/text of the Message
+    Participant received_from = 5;                                  // Person sending the Message
+    repeated Attachment attachments = 6;                            // List of attachments
+    eventing.model.resource.Channel.Type channel_type = 7;          // The channel type   
+    ChatEventType event_type = 8;                                   // The type of Message - MESSAGE, IS_TYPING, RICHMEDIA etc...
+    Sensitivity sensitivity = 9;                                    // The sensitivity of the Message - PUBLIC, PRIVATE, WHISPER    
+    string rich_media_type = 10 [deprecated=true];                  // Deprecated. Use rich_media_format instead
+    google.protobuf.Timestamp arrival_date = 11;                    // Arrival time of the Message
+    google.protobuf.Timestamp last_updated_time = 12;               // Time at which the Message was last updated
+    string custom_data = 13 [deprecated=true];                      // Deprecated. Use rich_media instead
+    RichMediaFormatEnum.RichMediaFormat rich_media_format = 14;     // The format of the rich media message - text, emoji, carousel etc...
+    google.protobuf.Any rich_media = 15;                            // The rich media message, valid message types are RichMediaText, RichMediaImage, RichMediaFile, RichMediaLocation, RichMediaLocationRequest and RichMediaCarousel
+    string channel_source = 16;                                     // Device or application message was sent from
+}
+
+// ChatMessages defines a repeated list of type ChatMessage
+message ChatMessages {
+    repeated ChatMessage messages = 1;
+}
+
+// EmailMessage represents an email message on the associated EMAIL channel type
+message EmailMessage {
+    string external_id = 1;                                         // Unique ID for the EmailMessage
+    string external_media_id = 2;                                   // The ID of the Media associated with the Message
+    string subject = 3;                                             // The Message subject
+    string body = 4;                                                // The payload/text of the Message
+    Participant received_from = 5;                                  // Person sending the Message  
+    repeated Attachment attachments = 6;                            // List of attachments       
+    EmailEventType event_type = 7;                                  // The email event type - MESSAGE, OUTGOING_ATTACHMENTS_ADDED, FORWARD etc...
+    repeated string send_to = 8;                                    // The send to list
+    repeated string cc_recipients = 9;                              // The cc recipients list
+    Encoding encoding = 10;                                         // The encoding of the Message
+    string custom_data = 11;                                        // Field containing extra arbitrary custom data
+    google.protobuf.Timestamp arrival_date = 12;                    // Arrival time of the Message
+    google.protobuf.Timestamp last_updated_time = 13;               // Time at which the Message was last updated
+    repeated string reply_to = 14;                                  // The reply to list
+    repeated string reply_to_all = 15;                              // The reply to all list
+    repeated string replyCCAll = 16;                                // The reply carbon copy to list
+    repeated string replyBCCAll = 17;                               // The reply blind carbon copy list   
+    string out_bound_originator = 18;                               // The originator of the EmailMessage
+}
+
+// EmailMessages defines a repeated list of type EmailMessage
+message EmailMessages {
+    repeated EmailMessage messages = 1;
+}
+
+// Attachment represents an attachment on a message
+message Attachment {
+    string id = 1;                                                  // ID of attachment
+    string mime_type = 2;                                           // MIME type labels the type of attachment data
+    string name = 3;                                                // Name of attachment
+    int64 size = 4;                                                 // Size of attachment
+    string address = 5 [deprecated=true];                           // Deprecated. Address from which the attachment originated
+    string uri = 6;                                                 // Address to download attachment from
+}
+
+// RichMediaText is a rich-media chat message
+message RichMediaText {
+    string text = 1;
+    repeated RichMediaSuggestion suggestions = 2;
+}
+
+// RichMediaImage is a rich-media chat message
+message RichMediaImage {
+    string text = 1;
+    string media_url = 2;
+    repeated RichMediaSuggestion suggestions = 3;
+}
+
+// RichMediaFile is a rich-media chat message
+message RichMediaFile {
+    string name = 1;
+    string media_url = 2;
+    string media_type = 3;
+    int32 media_size = 4;
+}
+
+// RichMediaLocation is a rich-media chat message
+message RichMediaLocation {
+    string name = 1;
+    string text = 2;
+    string address = 3;
+    string latitude = 4;
+    string longitude = 5;
+}
+
+// RichMediaPostback is a rich-media chat message
+message RichMediaPostback {
+    string text = 1;
+    string id = 2;
+}
+
+// RichMediaReply is a rich-media chat message
+message RichMediaReply {
+    string text = 1;
+    string id = 2;
+}
+
+// RichMediaLink is a rich-media chat message
+message RichMediaLink {
+    string text = 1;
+    string url = 2;
+}
+
+// RichMediaLocationRequest is a rich-media chat message
+message RichMediaLocationRequest {
+    string text = 1;
+}
+
+// RichMediaCarousel is a rich-media chat message
+message RichMediaCarousel {
+    enum CarouselSize {
+        UNKNOWN = 0;
+        COMPACT = 1;
+        LARGE = 2;
+    }
+    repeated RichMediaCarouselItem items = 1;
+    CarouselSize size = 2;
+}
+
+// RichMediaCarousel represents a carousel item
+message RichMediaCarouselItem {
+    string text = 1;
+    string description = 2;
+    string media_url = 3;
+    repeated RichMediaSuggestion suggestions = 4;
+}
+
+// RichMediaSuggestion represents a rich-media suggestion
+message RichMediaSuggestion {
+    RichMediaSuggestionFormatEnum.RichMediaSuggestionFormat rich_media_suggestion_format = 1;
+    google.protobuf.Any rich_media_suggestion = 2;                  // Valid message types are RichMediaPostback, RichMediaReply, RichMediaLink and RichMediaLocationRequest
+}
+
+// Encoding represents email encoding
+enum Encoding {
+    ENCODING_HTML = 0;                                              // HTML encoding will be employed
+    ENCODING_PLAIN = 1;                                             // Plaintext encoding will be employed
+}
+
+// Sensitivity represents the intended audience of a chat/message
+enum Sensitivity {
+    SENSITIVITY_PUBLIC = 0;                                         // Message visible to all
+    SENSITIVITY_WHISPER = 1;                                        // Message visible to agents only
+    SENSITIVITY_PRIVATE = 2;                                        // Message visible to recipient only
+}
+
+// ChatEventType defines an enumeration of supported webchat event types
+enum ChatEventType {
+    CHATEVENT_MESSAGE = 0;                                                    // MESSAGE
+    CHATEVENT_DRAFT = 1;                                                      // DRAFT
+    CHATEVENT_JOINED = 2;                                                     // JOINED
+    CHATEVENT_LEFT = 3;                                                       // LEFT
+    CHATEVENT_CLOSED = 4;                                                     // CLOSED
+    CHATEVENT_CONNECTED = 5;                                                  // CONNECTED
+    CHATEVENT_DISCONNECTED = 6;                                               // DISCONNECTED
+    CHATEVENT_VALIDATE = 7;                                                   // VALIDATE
+    CHATEVENT_SESSION = 8;                                                    // SESSION
+    CHATEVENT_SUBJECT_CHANGE = 9;                                             // SUBJECT_CHANGE
+    CHATEVENT_START = 10;                                                     // START
+    CHATEVENT_IS_TYPING = 11;                                                 // IS_TYPING
+    CHATEVENT_PAGE_PUSH = 12;                                                 // PAGE_PUSH
+    CHATEVENT_WHISPER = 13;                                                   // WHISPER
+    CHATEVENT_COBROWSE_SESSION_KEY = 14;                                      // COBROWSE_SESSION_KEY
+    CHATEVENT_TRANSFERRED_FILE = 15 [deprecated=true];                        // Deprecated. TRANSFERRED_FILE
+    CHATEVENT_CUSTOMER_DOWNLOAD_INITIATED = 16;                               // CUSTOMER_DOWNLOAD_INITIATED
+    CHATEVENT_CUSTOMER_DOWNLOAD_COMPLETE = 17;                                // CUSTOMER_DOWNLOAD_COMPLETE
+    CHATEVENT_WIDGET = 18;                                                    // WIDGET
+    CHATEVENT_QUERY_RESPONSE = 19;                                            // QUERY_RESPONSE
+    CHATEVENT_RICHMEDIA = 20;                                                 // RICHMEDIA
+    CHATEVENT_ATTACHMENTS_UPLOADED = 21;                                      // ATTACHMENTS_UPLOADED
+    CHATEVENT_ATTACHMENTS_DELETED = 22;                                       // ATTACHMENTS_DELETED
+}
+
+// EmailEventType defines an enumeration of supported email event types
+enum EmailEventType {
+    EMAILEVENT_MESSAGE = 0;                                                    // MESSAGE
+    EMAILEVENT_DRAFT_SAVED = 1;                                                // DRAFT_SAVED
+    EMAILEVENT_DRAFT = 2;                                                      // DRAFT
+    EMAILEVENT_OUTGOING_ATTACHMENTS_ADDED = 3 [deprecated=true];               // Deprecated. OUTGOING_ATTACHMENTS_ADDED
+    EMAILEVENT_OUTGOING_ATTACHMENTS_REMOVED = 4 [deprecated=true];             // Deprecated. OUTGOING_ATTACHMENTS_REMOVED
+    EMAILEVENT_DRAFT_FORWARD = 5;                                              // DRAFT_FORWARD
+    EMAILEVENT_FORWARD_SENT = 6;                                               // FORWARD_SENT
+    EMAILEVENT_OUTGOING_FORWARD_ATTACHMENTS_ADDED = 7 [deprecated=true];       // Deprecated. OUTGOING_FORWARD_ATTACHMENTS_ADDED
+    EMAILEVENT_EMAIL_FILE_LIMIT_EXCEEDED = 8;                                  // EMAIL_FILE_LIMIT_EXCEEDED
+    EMAILEVENT_FORWARD = 9;                                                    // FORWARD
+    EMAILEVENT_ATTACHMENTS_UPLOADED = 10;                                      // ATTACHMENTS_UPLOADED
+    EMAILEVENT_ATTACHMENTS_DELETED = 11;                                       // ATTACHMENTS_DELETED
+}
+
+// RichMediaFormat defines an enumeration of supported rich media types
+message RichMediaFormatEnum {
+    enum RichMediaFormat {
+        UNKNOWN = 0;
+        TEXT = 1;
+        IMAGE = 2;
+        FILE = 3;
+        LOCATION = 4;  
+        LOCATION_REQUEST = 5;  
+        CAROUSEL = 6;
+    }
+}
+
+// RichMediaSuggestionFormat defines an enumeration of rich media suggestions
+message RichMediaSuggestionFormatEnum {
+    enum RichMediaSuggestionFormat {
+        UNKNOWN = 0;
+        POSTBACK = 1;
+        REPLY = 2;
+        LINK = 3;
+        LOCATION_REQUEST = 4;
+    }
+}

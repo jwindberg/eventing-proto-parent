@@ -1,0 +1,360 @@
+syntax = "proto3";
+
+package api.eventing.model.request;
+
+import "eventing/model/interaction/interaction.proto";
+import "eventing/model/interaction/media/message.proto";
+import "eventing/model/resource/resource.proto";
+import "eventing/model/common.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "eventing/types";
+
+option java_multiple_files = true;
+option java_package = "com.avaya.adf.model.request";
+
+// Request is a request issued through ADF Core to perform an action
+message Request {
+	string id = 1;                     		   // Unique ID of the Request
+	string parent_id = 2;                      // Unique ID of the parent Request, if applicable
+	google.protobuf.Timestamp timestamp = 3;   // Time at which the Request was created
+	RequestType type = 4;                      // Type of Request - For example ACTIVATE, ACQUIRE
+	string client_id = 5;                      // ID of the client session associated with the Request
+	RequestState state = 6;                    // State of Request - For example INITIAL, ACTIVE, COMPLETED
+	string token = 7;                          // Raw access token string associated with the User
+	string tenant_id = 8;                      // ID of the tenant intended to service the Request
+    string reason = 9;                         // Reason for the state of the Request, if applicable 
+    string application_version = 10;           // The application version used for Blue/Green Upgrades and Canary releases 
+	google.protobuf.Any body = 15;             // Payload containing granular data to service the Request 
+	string trace_id = 16;                      // Trace ID field for open telemetry
+}
+
+// RequestType is an enumeration which defines a list of Request types supported in the system
+enum RequestType {
+    UNSPECIFIED = 0;                            // Not specified
+	ACQUIRE = 1; 							    // An acquire resource request
+	DEACQUIRE = 2; 							    // A deacquire resource request
+	LOGIN_USER = 6; 						    // A login user request
+	LOGOUT_USER = 7; 						    // A logout user request
+	UPDATE_INTERACTION = 9; 				    // An update interaction request
+    START_INTERACTION = 10; 					// A start interaction request
+	READY = 11; 							    // An update user state to ready request
+	NOT_READY = 12; 						    // An update user state to not ready request
+	AFTER_CONTACT_WORK = 18; 				    // An update user state to after contact work request
+	REMOVE_ATTACHMENT = 19; 				    // A remove attachment request
+	REMOVE_ATTACHMENTS = 20; 				    // A remove attachments request
+    OBSERVE = 26;  							    // A supervisor observe request
+    ADD_CHAT_MESSAGE = 28;                      // An add chat message request
+    ADD_EMAIL_MESSAGE = 29;                     // An add email message request
+    API_SUBSCRIPTION_DETAILS = 30;              // Provides a SubscriptionDetails payload as the request body
+    API_SUBSCRIPTION_STATUS = 31;               // Provides a SubscriptionStatus payload as the request body
+    DISPATCHABLE_LOCATION = 33 [deprecated=true];                 // A user dispatchable location request
+    ACTIVATE_CLIENT = 34; 					    // An activate client request
+	DEACTIVATE_CLIENT = 35;					    // A deactivate client request
+    AGENT_CONNECTED = 36;                       // An agent connected request
+    AGENT_DISCONNECTED = 37;                    // An agent disconnected request
+	MEDIA_SESSION = 38;                         // A Media Session request
+	INTERACTION_RECEIPT = 39;               	// An Interaction receipt request
+}
+
+// RequestState is an enumeration which defines a list of Request states 
+enum RequestState {
+	INITIAL = 0;                                // Request is in an initial state, written for the first time
+	ACTIVE = 1;                                 // Request is in an active state, has been picked up
+	WAITING = 2;                                // Request is in a waiting state, waiting for child requests to complete
+	COMPLETED = 3;                              // Request is in a completed state, request has been fully processed
+	FAILED = 4;                                 // Request is in a failed state, either timed out or an exception thrown
+	EXPIRED = 5;                                // Request is expired, trigger to null the request and remove from state stores
+	PENDING_ACTIVE = 6;                         // Request is pending active, has been picked up but not yet actioned
+}
+
+// InteractionOperationType is an enumeration which defines a list of Interaction actions
+enum InteractionOperationType {
+    UNKNOWN = 0;										// Interaction operation unknown
+    ACCEPT = 1;											// Accept the Interaction
+    HOLD = 2;											// Place the Interaction on hold
+    END = 3;											// Complete the Interaction
+    UNHOLD = 4;											// Place the Interaction off hold
+    WORK_CODE = 5;										// Label the Interaction with a particular work code
+    DTMF = 6;											// DMTF (Dial-tone multi-frequency) provides actioned digits on an agent's keypad 	
+    EXTEND_ACW = 7;										// Extend the AfterContactWork state
+    COMPLETE_ACW = 8;									// Resolve the AfterContactWork state
+    DISPOSITION_CODE = 9;								// Label the Interaction with a particular disposition codes
+    SINGLE_STEP_TRANSFER = 10;							// Transfer the Interaction to another agent or service
+    CONSULT = 11;										// Consult another agent or supervisor
+    CONSULT_COMPLETE = 12;								// Resolve the consulation either as conference or transfer
+    COACH = 13;                 						// Coach on the Interaction as a supervisor
+    BARGE = 14;                 						// Barge on the Interaction as a supervisor
+    MUTE = 15;                                          // Mute Voice/Video interaction
+    UNMUTE = 16;                                        // Unmute Voice/Video interaction
+    SINGLE_STEP_CONFERENCE = 17;                        // Add a participant to an interaction to create a conference
+}
+
+// AcquireResourceRequest defines the Request body associated with RequestType ACQUIRE
+message AcquireResourceRequest {
+    string provider_id = 1;                 			// ID of the Provider of the Resource to be acquired
+    string resource_address = 2;            			// Address of the Resource to be acquired
+    string login_id = 3;                    			// Station Login ID of the Agent acquiring the Resource
+    string password = 4;                    			// Password of the Agent acquiring the Resource, if required
+    string user_handle = 5;                 			// The user handle of the Agent acquiring the Resource
+    repeated string channels = 6;                       // List of channel types associated with the Resource
+}
+
+// DeacquireResourceRequest defines the Request body associated with RequestType DEACQUIRE
+message DeacquireResourceRequest {
+    string provider_id = 1; 							// ID of the Provider of the Resource to be acquired
+	string resource_address = 2; 						// Address of the Resource to be deacquired
+	string user_handle = 3;								// The user handle of the agent deacquiring the Resource
+}
+
+// ActivateClientRequest defines the Request body associated with RequestType ACTIVATE
+message ActivateClientRequest {
+	repeated Resource resources = 1;                    // The Resources on the Activated client
+	string previous_client_id = 2;                      // Previous Client Id if the Client is refreshed
+	string activate_reason = 3;                         // The reason for ActivateClientRequest, if applicable
+}
+
+// DectivateClientRequest defines the Request body associated with RequestType DEACTIVATE
+message DectivateClientRequest {
+	repeated Resource resources = 1;                    // The Resources on the Activated client
+    string deactivate_reason = 2;                       // The reason for DeactivateClientRequest, if applicable
+}
+
+// ResourceInteraction contains interaction details for a resource being activated
+message ResourceInteraction {
+    string id = 1;                                                 // Unique id of the Interaction
+    eventing.model.interaction.InteractionState current_state = 2; // The current state of the Interaction
+    eventing.model.resource.Channel.Type channel_type = 3;         // The channel type of the Interaction - Voice, Chat, EMail, Video, etc
+    google.protobuf.Timestamp established_time = 4;                // Time when interaction was first established
+    google.protobuf.Timestamp last_state_change_time = 5;          // Time of last change on the Interaction, not just state changes
+    string work_request_id = 6;                                    // The id of the work associated with the interaction
+    string contact_id = 7;                                         // The id of the contact associated with the Interaction
+}
+
+// Resource defines the payload containing all the necessary fields used for Client Activation Request event
+message Resource {
+    string provider_id = 1;                 			        // ID of the Provider of the Resource
+    string resource_address = 2;            			        // Address of the Resource
+    string login_id = 3;                    			        // Station Login ID of the Resource
+    string password = 4;                    			        // Password of the Resource, if required
+    string user_handle = 5;                 			        // The user handle of the Agent
+    repeated string channels = 6;                               // List of channel types associated with the Resource
+	string device_id = 7;                                       // Device ID of the resource
+    eventing.model.resource.MonitoredState monitored_state = 8; // The MonitoredState of the Resource - E.g. ACQUIRED, DEACQUIRED
+    repeated ResourceInteraction interactions = 9;              // List of active interactions on the resource
+}
+
+// StartProviderInteractionRequest defines the Request body associated with RequestType START_INTERACTION
+message StartProviderInteractionRequest {
+    string to_address = 1; 									// Target address of the Interaction (called party)
+    eventing.model.resource.Channel.Type channel_type = 2; 	// ChannelType of the Interaction
+    string resource_address = 3; 							// Resource address from which the Interaction has been initiated
+    string provider_id = 4; 								// ID of the Provider of the Resource from which the Interaction has been initiated
+    string user_handle = 5; 								// Handle of user making the request
+    string caller_line_id = 6;                              // Caller Line Identification
+}
+
+// Service details for transfer/consult to service requests
+message ServiceDetails {
+    string id = 1;                                      // Id of the target service
+    string name = 2;                                    // Name of the target Service
+    string address = 3;                                 // User handle of the user that is being transferred/consulted to
+}
+
+// UpdateInteractionRequest defines the Request body associated with RequestType UPDATE_INTERACTION
+message UpdateInteractionRequest {
+    string user_handle = 1; 							// Handle of user making the request
+    string work_request_id = 2; 						// The work request ID of the interaction
+    string external_interaction_id = 3; 				// The ID of the interaction
+    InteractionOperationType operation = 4; 			// The type of operation (accept, hold, unhold, etc...)
+    string reason = 5; 									// Reason code associated with the state change if applicable
+    
+    // The service or address to transfer to; Deprecated in favor of destination field
+    oneof target {
+        string to_address = 6 [deprecated = true]; 		// Address that the interaction is being transferred to or consulted    
+        string service_id = 7 [deprecated = true]; 		// ID of the service being transferred to
+	    string to_user_handle = 8 [deprecated = true]; 	// User handle of the user that is being transferred to or consulted
+    }
+
+    string resource_address = 9;                        // The address of the resource
+    string provider_id = 10;                            // The ID of the resource provider
+
+    // The service, address or user to transfer/consult to
+    oneof destination {
+        string address = 11; 					        // Address that the interaction is being transferred to or consulted    
+        ServiceDetails service = 12; 	            	// Credentials of the service the interaction is being transferred to or consulted
+	    string user = 13; 						        // User handle of the user that is being transferred to or consulted
+    }
+
+    bool is_auto_answered = 14;                         // Boolean indicating if an interaction is auto answered
+    string subtype = 15; 								// Subtype to specify a Transfer or Consult to a Team Member	
+    string caller_line_id = 16;                         // Caller Line Identification
+
+}
+
+// AddChatMessageRequest defines the Request body associated with RequestType ADD_CHAT_MESSAGE
+message AddChatMessageRequest {
+    string user_handle = 1;                                                                         // Handle of user making the request
+    string external_media_id = 2;                                                                   // ID of the Media associated with the Interaction 
+    string work_request_id = 3;                                                                     // The work request ID of the Interaction 
+    string external_interaction_id = 4;                                                             // The Interaction ID
+    string body = 5;                                                                                // The message request body 
+    eventing.model.interaction.media.ChatEventType event_type = 6;                                  // Chat event type (MESSAGE, DRAFT, IS_TYPING..etc)
+    eventing.model.interaction.media.Sensitivity sensitivity = 7;                                   // Represents the level of intended audience (PUBLIC, WHISPER, PRIVATE)
+    string rich_media_type = 8 [deprecated = true];                                                 // Deprecated. Use rich_media_format instead
+    string text_fallback = 9;                                                                       // The rich media text representation to store in the history transcript
+    eventing.model.interaction.media.RichMediaFormatEnum.RichMediaFormat rich_media_format = 10;    // The format of the rich media message - text, emoji, carousel etc...
+    google.protobuf.Any rich_media = 11;                                                            // The rich media message, valid message types are RichMediaText, RichMediaImage, RichMediaFile, RichMediaLocation, RichMediaLocationRequest and RichMediaCarousel
+}
+
+// AddEmailMessageRequest defines the Request body associated with RequestType ADD_EMAIL_MESSAGE
+message AddEmailMessageRequest {
+    string user_handle = 1; 												    // Handle of user making the request
+    string external_media_id = 2; 										        // ID of the Media associated with the Interaction 
+    string work_request_id = 3; 											    // The work request ID of the Interaction 
+    string external_interaction_id = 4; 										// The Interaction ID
+    string subject = 5; 													    // The subject field of an email message request
+    string body = 6; 														    // The message request body 
+    eventing.model.interaction.media.EmailEventType event_type = 7; 	        // Email event type (MESSAGE, DRAFT, FORWARD ..etc)
+    repeated string to = 8; 												    // Addresses to which the email message should be sent 
+    string from = 9; 														    // Address of which the email message is sent from
+    repeated string CC = 10; 												    // Addresses to which the email should be carbon copied
+    repeated string BCC = 11; 												    // Addresses to which the email should be blind carbon copied
+}
+
+// WorkMode defines an enumeration of available WorkMode values, defaults to NOT_SET
+enum WorkMode {
+	NOT_SET = 0; 										// WorkMode has not been set, indicating that it is not applicable
+	AUTO_IN = 1; 										// Agent is automatically ready after releasing a call
+	MANUAL_IN = 2; 										// Agent needs to manually make themselves ready after releasing a call
+}
+    
+// LoginRequest defines the Request body associated with RequestType LOGIN_USER
+message LoginRequest {
+    string profile_id = 1; 								// ID of the profile used by the agent making the request
+    string user_handle = 2; 							// Handle of agent making the request
+    string default_state = 3; 							// Default state an agent is set to once logged in
+    WorkMode work_mode = 4; 							// The value to set for the WorkMode 
+}
+
+// LogoutRequest defines the Request body associated with RequestType LOGOUT_USER
+message LogoutRequest {
+    string profile_id = 1; 								// ID of the profile used by the target agent
+    string user_handle = 2; 							// Handle of the target agent
+    string reason = 3; 									// Reason for LogoutRequest, if applicable
+    string supervisor_user_handle = 4;                  // Handle of the supervisor who initiated the Logout state change. Will be blank if initiated by the agent
+}
+
+// ReadyRequest defines the Request body asssociated with RequestType READY
+message ReadyRequest {
+    string profile_id = 1; 								// ID of the profile used by the agent making the request
+    string user_handle = 2; 							// Handle of agent making the request
+    WorkMode work_mode = 3; 							// The value to set for the Work Mode 
+}
+
+// NotReadyRequest defines the Request body asssociated with RequestType NOT_READY
+message NotReadyRequest {
+    string profile_id = 1; 								// ID of the profile used by the target agent
+    string user_handle = 2; 							// Handle of the target agent
+    string reason = 3; 									// Reason for NotReadyRequest, if applicable
+    string supervisor_user_handle = 4;                  // Handle of the supervisor who initiated the Not Ready state change. Will be blank if initiated by the agent
+}
+
+// AfterContactWorkRequest defines the Request body associated with RequestType AFTER_CONTACT_WORK
+message AfterContactWorkRequest {
+    string profile_id = 1; 								// ID of the profile used by the agent making the request
+    string user_handle = 2; 							// Handle of agent making the request
+    string reason = 3; 									// Reason for AfterContactWorkRequest, if applicable
+}
+
+// RemoveAttachmentRequest defines the Request body associated with RequestType REMOVE_ATTACHMENT
+message RemoveAttachmentRequest {
+    string user_handle = 1; 							// Handle of user making the request
+    string work_request_id = 2; 						// The work request ID of the Interaction
+    string external_interaction_id = 3; 				// The ID of the Interaction
+    string attachment_id = 4; 							// The ID of the attachment        
+}
+
+// RemoveAttachmentRequests defines the Request body associated with RequestType REMOVE_ATTACHMENTS
+message RemoveAttachmentsRequest {
+    string user_handle = 1; 							// Handle of user making the request
+    string work_request_id = 2; 						// The work request ID of the Interaction
+    string external_interaction_id = 3; 				// The ID of the Interaction    
+}
+
+// StartProviderObserveRequest defines the Request body associated with RequestType OBSERVE
+message StartProviderObserveRequest {
+    string user_handle = 1;		                     		// User handle of the supervisor performing the agent observation
+    enum Type {
+        UNKNOWN = 0;                            			// Observation type unknown
+        INTERACTION = 1;                        			// Observation of an Interaction
+    }
+    Type type = 2;                              			// The entity which a supervisor wishes to observe   
+    eventing.model.resource.Channel.Type channel_type = 3;  // Channel type of the requested observe Interaction
+    string resource_address = 4;                			// Supervisor resource session address
+    string provider_id = 5;                     			// Supervisor resource session provider ID
+    google.protobuf.Any value = 6;              			// Details of the message associated with the specified type     
+}
+
+// ObserveInteractionDetails is the value associated with a supervisor observe interaction request
+message ObserveInteractionDetails {
+    string external_interaction_id = 1;     			// The ID of Interaction to observe
+    string work_request_id = 2;             			// WorkRequestID of the Interaction to observe
+    string contact_id = 3;                  			// ContactID of the Interaction to observe  
+}
+
+// SubscriptionDetails defines a payload containing the number of active subscribers for a given subscription
+message SubscriptionDetails {
+    string client_id = 1;                           // Client identifier representing who the subscription is intended to serve - E.g. ELITE, IXCC
+    string tenant_id = 2;                           // Tenant identifier used to filter events based on the desired tenant
+    int32 subscribers = 3;                          // Number of active subscribers for a given tenant
+    repeated string provider_ids = 5;               // Ids of the providers used to filter events based on the desired provider
+    eventing.model.Origin origin = 6;               // The origin associated with the subscription
+}
+
+// SubscriptionStatus defines a payload containing a list of the number of active subscribers for all tenants, for a client
+message SubscriptionStatus {
+    repeated TenantSubscriptionDetail tenant_details = 1;   // List of tenant subscription details
+}
+
+// TenantSubscriptionDetail number of subscribers for a given tenant
+message TenantSubscriptionDetail {
+    string tenant_id = 1;                           // Tenant identifier 
+    int32 subscribers = 2;                          // Number of active subscribers for a given tenant
+    repeated string provider_ids = 3;               // Ids of the providers used to filter events based on the desired provider
+    eventing.model.Origin origin = 4;               // The origin associated with the subscription
+}
+
+// AgentConnected defines the Request body associated with RequestType AGENT_CONNECTED
+message AgentConnected {
+    string user_handle = 1;                         // Handle of user making the request
+    google.protobuf.Timestamp event_timestamp = 2;  // Time when websocket is opened for an agent session
+}
+
+// AgentDisconnected defines the Request body associated with RequestType AGENT_DISCONNECTED
+message AgentDisconnected {
+    string user_handle = 1;                         // Handle of user making the request
+    google.protobuf.Timestamp event_timestamp = 2;  // Time when websocket is closed for an agent session
+}
+
+// MediaSessionRequest defines the Request body associated with RequestType MEDIA_SESSION
+message MediaSessionRequest {
+    enum Type {
+        UNKNOWN = 0;                                    // Media Session Request type unknown
+        REFRESH_TOKEN = 1;                              // Media Session Request type Refresh Token
+    }
+    string user_handle = 1;                             // Handle of user making the request
+    string device_id = 2;                               // Agent resource device ID
+	Type type = 3;                                      // Type of request
+}
+
+//InteractionReceiptRequest defines a request indicating successful delivery of an interaction to the client
+message InteractionReceiptRequest {
+    string provider_id = 1;                             	// Id of the provider the created this interaction
+    string resource_address = 2;                        	// Id of the resource this interaction was routed to
+    string work_request_id = 3;                         	// Id of the work request associated with this interaction
+    string contact_id = 4;                              	// Id of the contact associated with this interaction
+    string interaction_id = 5;                          	// Id of the interaction this receipt pertains to
+    eventing.model.interaction.InteractionState state = 6;  // State of the interaction
+}

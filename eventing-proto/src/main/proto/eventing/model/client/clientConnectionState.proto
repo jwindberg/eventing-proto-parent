@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package api.eventing.model.client;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "eventing/types";
+
+option java_multiple_files = true;
+option java_package = "com.avaya.adf.model.client";
+
+// ClientConnectionState defines the payload containing all the necessary fields used to write a Cient Connection State event
+message ClientConnectionState {
+    ConnectionEvent connection_event = 1;                   // The event in the lifecycle of the connection
+    string auth_user_handle = 2;                            // Authentication User handle of the user active on this client
+    string client_id = 3;           		                // Client Id
+    string application_id = 4;		                        // Application client (e.g. workspaces, sfdc client, third party) that this session is activated on
+    string tenant_id = 5;                                   // Tenant Id this client has activated on
+    google.protobuf.Timestamp established_timestamp = 6;    // Timestamp the client was established
+    google.protobuf.Timestamp timestamp = 7;                // Timestamp event occurred, i.e. connected time, heartbeat time, disconnected time
+    string user_handle = 8;                                 // The user's handle
+    string application_version = 9;                         // The application version used for Blue/Green Upgrades and Canary releases
+}
+
+// ConnectionEvent defines an enumeration of supported model types as they related to a Client Connection State
+enum ConnectionEvent {
+	CONNECTIONEVENT_UNKNOWN = 0;           	                // Connection Event unknown
+	CONNECTIONEVENT_CONNECTED = 1;                        	// Connected Connection Event
+	CONNECTIONEVENT_HEARTBEAT = 2;                         	// Heartbeat Connection Event
+	CONNECTIONEVENT_DISCONNECTED = 3;                      	// Disconnected Connection Event
+}	

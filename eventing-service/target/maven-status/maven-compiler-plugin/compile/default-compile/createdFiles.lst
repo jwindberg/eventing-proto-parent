@@ -1,0 +1,6 @@
+com/marsraver/service/StreamsService.class
+com/marsraver/service/QueryApiService.class
+com/marsraver/service/EventStoreService.class
+com/marsraver/GrpcServerHealthIndicator$1.class
+com/marsraver/EventingServiceApplication.class
+com/marsraver/GrpcServerHealthIndicator.class

@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package api.eventing.model.interaction.media;
+
+import "eventing/model/interaction/interaction.proto";
+import "eventing/model/interaction/media/message.proto";
+import "eventing/model/resource/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "eventing/types";
+
+option java_multiple_files = true;
+option java_package = "com.avaya.adf.model.interaction";
+
+// WriteMediaRequest defines the payload containing all the necessary fields used to write a Media event
+message WriteMediaRequest {
+    string external_id = 1;                                             // The external Media ID
+    string external_interaction_id = 2;                                 // The external Interaction ID
+    string work_request_id = 3;                                         // The work request ID of the related Interaction
+    string tenant_id = 4;                                               // The ID of the associated tenant
+    eventing.model.resource.Channel.Type type = 5;                      // The channel type as it relates to the Interaction - E.g. EMAIL, WEBCHAT
+    repeated Participant participants = 6;                              // List of Participants
+ 
+    // Messages contains one of the specified types containing a list of ChatMessages of EmailMessages 
+    oneof messages {
+        ChatMessages chat_messages = 7;                                 // Chat message history
+        EmailMessages email_messages = 8;                               // Email message history
+    }
+
+    google.protobuf.Timestamp last_updated_time = 9;                    // Time at which Media was last updated
+	string trace_id = 16;                                               // Trace ID field for open telemetry
+}

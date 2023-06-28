@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package api.eventing.model.error;
+
+option go_package = "eventing/types";
+
+option java_multiple_files = true;
+option java_package = "com.avaya.adf.model.error";
+
+// WriteErrorRequest defines the payload containing all the necessary fields used to write an Error event
+message WriteErrorRequest {
+    string id = 1;												// A unique error ID
+    int32 code = 2;												// Error code
+    string message = 3;											// User friendly error message
+    string detail = 4;											// A detailed description of the error
+    Scope scope = 5;											// Scope as it relates to the target audience - E.g. CLIENT, SYSTEM
+    Severity severity = 6;										// Severity of the Error - E.g. INFO, CRITICAL
+    string scope_key = 7;										// The key of the Scope entity - E.g. The client session ID when using SCOPE_CLIENT
+    string external_id = 8;										// External identifier
+	map<string, string> message_placeholders = 9;				// Map of message placeholders
+	string tenant_id = 10;                                      // The ID of the associated tenant
+	ErrorSource source = 11;									// The Source of the Error
+	string trace_id = 16;                      					// Trace ID field for open telemetry
+}
+
+// Scope defines an enumeration of Error Scope values as they relate to a target audience
+enum Scope {
+	SCOPE_UNSPECIFIED = 0; 										// Error will not be sent
+	SCOPE_CLIENT = 1; 											// Send to a single Client. Scope key should be set to the client session ID 
+	SCOPE_USER = 2; 											// Send to all Clients associated with this User. Scope key should be set to the user handle of this User 
+	SCOPE_RESOURCE = 3; 										// Send to all Clients associated with this Resource. Scope key should be set to the associated Resource ID (providerID-resourceAddress)
+	SCOPE_INTERACTION = 5; 										// Send to all Clients associated with this Interaction. Scope key should be set to the interaction ID
+}
+
+
+// Severity defines an enumeration Error Severity level, determining how an Error should be displayed on the client
+enum Severity { 
+	SEVERITY_UNSPECIFIED = 0; 									// Severity not defined
+	SEVERITY_INFO = 1; 											// Displays an informative toast notification on the client
+	SEVERITY_WARNING = 2; 										// Displays a warning toast notification on the client
+	SEVERITY_CRITICAL = 3; 										// Displays a critical error toast notification on the client
+}
+
+// ErrorSource defines an enumeration for the Source of the Error values as they relate to a target audience
+enum ErrorSource {
+	ERRORSOURCE_UNSPECIFIED = 0; 								// Source not defined
+	ERRORSOURCE_APPLICATION_ENABLEMENT_SERVICES = 1; 			// Source is the Application Enablement Services (AES) Component
+	ERRORSOURCE_CT_SUITE = 2; 									// Source is the CT Suite Component
+	ERRORSOURCE_AXP = 3; 										// Source is the AXP Contact Center
+	ERRORSOURCE_ELITE = 4; 										// Source is the Elite Contact Center
+}

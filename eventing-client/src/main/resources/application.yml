@@ -1,0 +1,39 @@
+server:
+  port: 7075
+  servlet:
+    context-path: /
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+      base-path: /actuator
+  endpoint:
+    health:
+      probes.enabled: true
+      livenessState.enabled: true
+      readinessState.enabled: true
+      show-details: always
+#  server:
+#    port: 7076
+
+
+grpc:
+  client:
+    EventStore:
+      address: static://localhost:7071
+      negotiationType: plaintext
+    QueryApi:
+      address: static://localhost:7071
+      negotiationType: plaintext
+    Health:
+      address: static://localhost:7071
+      negotiationType: plaintext
+
+spring:
+  jackson:
+    serialization:
+      fail-on-self-references: false
+
+#logging.level.root: DEBUG

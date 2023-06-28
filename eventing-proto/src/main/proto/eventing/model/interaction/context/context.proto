@@ -1,0 +1,226 @@
+syntax = "proto3";
+
+package api.eventing.model.interaction.context;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "eventing/types";
+
+option java_multiple_files = true;
+option java_package = "com.avaya.adf.model.interaction";
+
+// WriteInteractionContextRequest defines the payload containing all the necessary fields used for writing an InteractionContext event
+message WriteInteractionContextRequest {
+    string external_interaction_id = 1;                             // The ID of the external Interaction
+    repeated Context contexts = 2;                                  // A list of Contexts related to the Interaction
+    string tenant_id = 3;                                           // The ID of the associated tenant
+	string trace_id = 16;                                           // Trace ID field for open telemetry
+}
+
+// Context is a type used to issue background information as it relates to an Interaction
+message Context {
+    // Type defines an enumeration of supported Context types
+    enum Type {
+        UNSPECIFIED = 0;                                            // Context type not defined
+        PAGE_PUSH = 1;                                              // Supplies a reference to an external webpage 
+        SUGGESTED_PHRASE = 2;                                       // Provides a common phase for message templating
+        COBROWSE = 3;                                               // Provides a means of webpage sharing between agent and customer
+        SCREEN_POP = 4;                                             // Configures webpage pop-ups 
+        CONTEXT_STORE = 5;                                          // Context store provides a way to set context related to an Interaction
+        CUSTOMER_HISTORY = 6;                                       // A collection of previous customer cases 
+        CUSTOMER_DETAILS = 7;                                       // Personal details of the customer - E.g. name, address & contact details  
+        CLIENT_VALIDATION = 8;                                      // Provides various options and rules to be enforced on the client 
+        CAMPAIGN_SCRIPT = 9;                                        // Provides a URL for use on outbound campaigns
+        ORIGINATOR = 10;                                            // Populates the "from" address field associated with an outbound email
+        CUSTOM = 11;                                                // Defines a Custom Context Type
+        CHANNEL_SRC = 12;                                           // Provides Channel Source info for Async interactions
+    }
+    Type type = 1;                                                  // The Context type - E.g. PAGE_PUSH, SUGGESTED_PHRASE
+    google.protobuf.Any data = 2;                                   // The Context payload - E.g. the PAGE_PUSH or SUGGESTED_PHRASE message
+    string description = 3;                                         // User friendly description of the Context
+}
+
+// PagePush defines the payload for the PAGE_PUSH context type
+message PagePush {
+    string url = 1;                                                 // The url sent to the customer
+    string description = 2;                                         // A description of what the PagePush url respresents
+}
+
+// SuggestedPhrase defines the payload for the SUGGESTED_PHRASE context type
+message SuggestedPhrase {
+    string name = 1;                                                // The name of the suggested phrase
+    string text = 2;                                                // The text that will be sent to the customer
+}
+
+// Screenpop defines the payload for the SCREEN_POP context type
+message Screenpop {
+    string name = 1;                                                // The name of the Screenpop
+    string uri = 2;                                                 // URI to be used as the Screenpop target
+    
+    // Trigger defines an enumeration of the state an Interaction should be in before a screenpop is displayed
+    enum Trigger {
+        UNSPECIFIED = 0;                                            // Trigger not specified
+        IDLE = 1;       	                                        // The Screenpop will be displayed when the Interaciton is in the IDLE state
+        INITIATED = 2;                                              // The Screenpop will be displayed when the Interaciton is in the INITIATED state
+        ALERTING = 3;                                               // The Screenpop will be displayed when the Interaciton is in the ALERTING state
+        ACTIVE = 4;                                                 // The Screenpop will be displayed when the Interaciton is in the ACTIVE state
+        HELD = 5;                                                   // The Screenpop will be displayed when the Interaciton is in the HELD state
+        FAILED = 6;                                                 // The Screenpop will be displayed when the Interaciton is in the FAILED state
+        INACTIVE = 7;                                               // The Screenpop will be dispalyed when the Interaciton is in the INACTIVE state
+    }
+    Trigger trigger = 3;                                            // Trigger sets the Interaction state in which the Screenpop is displayed
+
+    // Scope defines if a Screenpop should be launched within the client or in a new window
+    enum Scope {
+        INTERNAL = 0;                                               // Luanch the Screenpop within the current browser window
+        EXTERNAL = 1;                                               // Luanch the Screenpop in a new browser window
+    }
+    Scope scope = 4;                                                // Scope sets how the Screenpop should be opened - within the current browser window or a new window
+
+    // Action defines if a Screenpop should be closed when an Interaction ends
+    enum Action {
+        ACTION_NONE = 0;                                            // Take no action when the Interaction is completed
+        ACTION_CLOSE_ON_END = 1;                                    // Close the Screenpop when the Interaction is completed
+    }
+    Action action = 5;                                              // Action sets the close action for the Screenpop when the Interaction has ended
+}
+
+// CustomerDetails defines the payload for the CUSTOMER_DETAILS context type 
+message CustomerDetails {
+    string name = 1;                                                // Customer name
+    string title = 2;                                               // Customer title (Eg: Mr or Mrs)
+    string first_name = 3;                                          // Customer first name
+    string last_name = 4;                                           // Customer last name
+    string preferred_name = 5;                                      // Customer preferred name
+    string preferred_response_media = 6;                            // Customer preferred method of response
+    string avatar_url = 7;                                          // Customer avatar url
+    string company = 8;                                             // Customer company
+    repeated CustomerAddress customer_addresses = 9;                // List of customer addresses
+    repeated CustomerCRM customer_crms = 10;                        // List of customer crms
+    repeated CustomerCustom customer_customs = 11;                  // List of customer specific custom data
+    repeated CustomerEmail customer_emails = 12;                    // List of customer emails
+    repeated CustomerPhone customer_phones = 13;                    // List of customer phones
+    repeated CustomerSocial customer_socials = 14;                  // List of customer socials    
+    google.protobuf.Timestamp last_updated_time_stamp = 15;         // Time at which the customer details were last modified
+}
+
+// CustomerEmail defines the details of a CustomerEmail data entry 
+message CustomerEmail {
+    string address = 1;                                             // Customer email address
+    bool default_email = 2;                                         // Determines whether or not the customer email is preferred
+    google.protobuf.Timestamp last_updated_time_stamp = 3;          // Time at which the customer email was last modified
+    bool verified = 4;                                              // Determines whether of not the customer email has been verified
+}
+
+// CustomerPhone defines the details of a CustomerPhone data entry
+message CustomerPhone {
+    string area_code = 1;                                           // The customer phone area code or mobile network prefix (For example: 085 or 091)
+    bool default_phone = 2;                                         // Determines whether or not the customer phone is preferred
+    string international_code = 3;                                  // The customer phone country calling code (For example: +353 or +44)
+    google.protobuf.Timestamp last_updated_time_stamp = 4;          // Time at which the customer phone was last modified
+    string number = 5;                                              // The customer phone number
+    string type = 6;                                                // The customer phone type
+}
+
+// CustomerAddress defines the details of a CustomerAddress data entry
+message CustomerAddress {
+    string company = 1;                                             // The company associated with the address if applicable
+    string line1 = 2;                                               // Address line 1
+    string line2 = 3;                                               // Address line 2
+    string line3 = 4;                                               // Address line 3
+    string city = 5;                                                // The city associated with the address
+    string state_or_province = 6;                                   // The state or province associated with the address
+    string country = 7;                                             // The country associated with the address
+    string zip_code = 8;                                            // The address zipcode
+    string type = 9;                                                // The type of address
+    bool default_address = 10;                                      // Determines whether or not the customer address is preferred
+    bool verified = 11;                                             // Determines whether or not the customer address has been verified
+    google.protobuf.Timestamp last_updated_time_stamp = 12;         // Time at which the customer address was last modified
+}
+
+// CustomerCRM defines the details of a CustomerCRM data entry
+message CustomerCRM {
+    string crm_id = 1;                                              // A unique identifier for the customer crm
+    string crm_name = 2;                                            // The name of the crm
+    string crm_type = 3;                                            // The type of the crm
+    bool default_crm = 4;                                           // Determines whether or not the crm is preferred
+    google.protobuf.Timestamp last_updated_time_stamp = 5;          // Time at which the customer crm was last modified
+    bool verified = 6;                                              // Determines whether or not the crm has been verified
+}
+
+// CustomerSocial defines the details of a CustomerSocial data entry
+message CustomerSocial {
+    bool default_social = 1;                                        // Determines whether or not the social account is preferred
+    google.protobuf.Timestamp last_updated_time_stamp = 2;          // Time at which the customer social was last modified
+    string message_type = 3;                                        // The type of message
+    string platform = 4;                                            // The social media platform associated
+    string social_handle = 5;                                       // The customer's handle associated with the social media platform
+    bool verified = 6;                                              // Determines whether or not the customer social has been verified
+}
+
+// CustomerCustom provides a customizable Customer data entry
+message CustomerCustom {
+    google.protobuf.Timestamp last_updated_time_stamp = 1;          // Time at which the customer custom was last modified
+    string name = 2;                                                // Name of the custom customer specific data
+    string text = 3;                                                // Text or value associated with the custom customer specific data
+    bool verified = 4;                                              // Determines whether or not the custom customer data has been verified
+}
+
+// CustomerHistory defines the payload for the CUSTOMER_HISTORY context type
+message CustomerHistory {
+    string action = 1;                                              // Action taken to resolve customer history case
+    google.protobuf.Timestamp created_date = 2;                     // Time at which the customer history case took place
+    string friendly_name = 3;                                       // A user friendly name representing the customer history case
+    string href = 4;                                                // URL provided for retrieving customer history case details and transcript
+    string id = 5;                                                  // Unique identifier of customer history case
+    string priority = 6;                                            // Indicates the level of importance or severity of the customer history case
+    string status = 7;                                              // Marks the state in which the customer history case resides (OPEN, CLOSED...etc)
+    string subject = 8;                                             // Brief description of the reason for the customer history case
+    string type = 9;                                                // The ChannelType of the interaction associated with the customer history case (CHAT, EMAIL...etc)
+}
+
+// Originator defines the payload for the ORIGINATOR context type
+message Originator {
+    string address = 1;                                             // The from address associated with an email
+    string description = 2;                                         // Description or friendly name related to the address displayed on Workspaces
+}
+
+// CustomContext defines the payload for the CUSTOM context type
+message CustomContext { 
+    google.protobuf.Timestamp last_updated_time_stamp = 1;  // Time at which the custom context was last modified 
+    string name = 2;                                        // Name of the custom context specific data 
+    string value = 3;                                       // Text or value associated with the custom context specific data 
+}
+
+// ClientValidation defines the payload for the CLIENT_VALIDATION context type
+message ClientValidation {
+    // Type defines an enumeration of supported ClientValidation types
+    enum Type {
+        UNSPECIFIED = 0;                                                          // Type unspecified
+        SMS_MAX_CHAR = 1 [deprecated=true];                                       // Deprecated. Maximum number of SMS characters
+        OUTBOUND_ATTACHMENT_LOCATION = 2 [deprecated=true];                       // Deprecated. Location for uploading attachments
+        CUSTOMER_COBROWSE_ENABLED = 3;                                            // Boolean type for customer enabled CoBrowse
+        SOCIAL_MAX_CHAR = 4 [deprecated=true];                                    // Deprecated. Maximum number of social IM characters
+        OUTBOUND_ATTACHMENT_METADATA = 5 [deprecated=true];                       // Deprecated. Custom metadata associated with the attachments
+        ASYNC_OUTBOUND_FILE_TYPES = 6 [deprecated=true];                          // Deprecated. Asynchronous Outbound File Types
+        ASYNC_OUTBOUND_FILE_MAX_SIZE = 7 [deprecated=true];                       // Deprecated. Asynchronous Outbound File Maximum Size
+        ASYNC_WHATSAPP_OUTBOUND_FILE_TYPES = 8 [deprecated=true];                 // Deprecated. Asynchronous Whatsapp Outbound File Types
+        ASYNC_WHATSAPP_OUTBOUND_FILE_MAX_SIZE = 9 [deprecated=true];              // Deprecated. Asynchronous Whatsapp Outbound File Maximum Size
+        ASYNC_WHATSAPP_OUTBOUND_DOCUMENT_MEDIA_TYPE_LIMIT = 10 [deprecated=true]; // Deprecated. Asynchronous Whatsapp Outbound Document Media Type Limit
+        MAX_CHAR = 11;                                                            // Maximum number of characters for a message
+        ATTACHMENT_FILE_MEDIA_TYPE_LIMIT = 12;                                    // Attachment file media type limit
+        ATTACHMENT_FILE_TYPES = 13;                                               // Attachment file types
+        ATTACHMENT_FILE_MAX_SIZE = 14;                                            // Attachment file maximum size
+        ATTACHMENT_UPLOAD_IDENTIFIER = 15;                                        // Identifier used to reference attachment in FormData
+        ATTACHMENT_UPLOAD_LOCATION = 16;                                          // Location for uploading attachments
+        ATTACHMENT_UPLOAD_METADATA = 17;                                          // Custom metadata associated with the attachments
+    }           
+    Type type = 1;                                                                // The type associated with a client validation
+    string value = 2;                                                             // Text or value associated with a client validation
+}
+
+// ChannelSrc defines the payload for the CHANNEL_SRC context type
+message ChannelSrc {
+    string value = 1;                                               // Channel Source of an Async Interaction
+}

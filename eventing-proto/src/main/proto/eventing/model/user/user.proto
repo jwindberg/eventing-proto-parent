@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package api.eventing.model.user;
+
+import "eventing/model/common.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "eventing/types";
+
+option java_multiple_files = true;
+option java_package = "com.avaya.adf.model.user";
+
+// WriteUserRequest defines the payload containing all the necessary fields used for writing a UserSession event
+message WriteUserRequest {
+    UserState state = 1;                                    // The state of the User
+    string reason_code = 2;                                 // Reason code associated with User state
+    string state_reason = 3;                                // User friendly description of state reason
+    map<string, bool> capabilities = 4;                     // Capabilities applicable to the User
+    google.protobuf.Timestamp last_state_change_time = 5;   // Time at which the User state was last updated
+    string user_handle = 6;                                 // The User ID or handle
+    string tenant_id = 7;                                   // The tenant ID associated with the User
+    eventing.model.Origin origin = 8;                       // The origin associated with the User
+	string trace_id = 16;                                   // Trace ID field for open telemetry
+}
+
+// UserState defines an enumeration of supported User states 
+enum UserState {
+    USERSTATE_UNSPECIFIED = 0;                              // User state unspecified
+    USERSTATE_LOGIN_PENDING = 1;                            // User is awaiting a state change to USERSTATE_LOGGED_IN
+    USERSTATE_LOGOUT_PENDING = 2;                           // User is awaiting a state change to USERSTATE_LOGGED_OUT
+    USERSTATE_LOGGED_OUT = 3;                               // User is logged out
+    USERSTATE_READY = 4;                                    // User is logged in and ready to receive work
+    USERSTATE_NOT_READY_PENDING = 5;                        // User is awaiting a state change to USERSTATE_NOT_READY
+    USERSTATE_NOT_READY = 6;                                // User is logged in, but not ready to receive work
+    USERSTATE_COMPLETE = 7;                                 // User is logged out and all client sessions deactivated
+    USERSTATE_LOGGED_IN = 8;                                // User is logged in
+    USERSTATE_AFTER_CONTACT_WORK_PENDING = 9;               // User is awaiting a state change to USERSTATE_AFTER_CONTACT_WORK
+    USERSTATE_AFTER_CONTACT_WORK = 10;                      // User has completed an Interaction which requires a additional work 
+}

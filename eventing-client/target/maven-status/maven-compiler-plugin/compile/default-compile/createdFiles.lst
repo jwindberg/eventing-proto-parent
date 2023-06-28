@@ -1,0 +1,12 @@
+com/marsraver/EventingClientApplication.class
+com/marsraver/GrpcServerHealthIndicator$1.class
+com/marsraver/eventing/client/QueryApiController$UserResourceResponse.class
+com/marsraver/eventing/client/EventStoreClientService.class
+com/marsraver/GrpcServerHealthIndicator.class
+com/marsraver/eventing/client/QueryApiController$UserResources$UserResourcesBuilder.class
+com/marsraver/eventing/client/QueryApiController.class
+com/marsraver/eventing/client/QueryApiController$UserResources.class
+com/marsraver/eventing/client/EventStoreController.class
+com/marsraver/eventing/client/QueryApiClientService.class
+com/marsraver/eventing/client/MainClient.class
+com/marsraver/eventing/client/QueryApiController$UserResourceResponse$UserResourceResponseBuilder.class

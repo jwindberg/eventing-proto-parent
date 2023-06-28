@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package api.eventing.model.property;
+
+import "eventing/model/common.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "eventing/types";
+
+option java_multiple_files = true;
+option java_package = "com.avaya.adf.model.property";
+
+// WritePropertyRequest defines the payload containing all the necessary fields used to write a Property event
+message WritePropertyRequest {
+    string id = 1;                          				// Unique identifier of the Property
+	google.protobuf.Timestamp created = 2;  				// Timestamp when Property first created
+	string user_handle = 3;                 				// Handle / ID of the user associated with the Property. Required to be able to find the ClientSessions
+	PropertyType property_type = 4;        					// The type of Property
+	PropertyState property_state = 5;     					// The state of the Property, ACTIVE until completed
+	google.protobuf.Any property_value = 6; 				// Contains the child Property type value  
+	string tenant_id = 7;                                   // The ID of the associated tenant
+    eventing.model.Origin origin = 8;                       // The contact center origin associated with the Property
+	string trace_id = 16;                                   // Trace ID field for open telemetry
+}
+
+// PropertyType defines an enumeration of supported model types as they related to a Property
+enum PropertyType {
+	PROPERTYTYPE_UNSPECIFIED = 0;                           // PropertyType unspecified
+	PROPERTYTYPE_RESOURCE = 1;                           	// The Property is related to a Resource
+	PROPERTYTYPE_CLIENT = 2;                           		// The Property is related to a Client Session
+}	
+
+// PropertyState defines an enumeration of supported Property states
+enum PropertyState {
+	PROPERTYSTATE_UNSPECIFIED = 0;                          // PropertyState unspecified
+	PROPERTYSTATE_ACTIVE = 1;                             	// ACTIVE
+	PROPERTYSTATE_COMPLETE = 2;                           	// COMPLETE
+}
+
+// ResourceProperty defines the model which represents a Resource Property
+message ResourceProperty {
+	string property_name = 1;               				// Name of the Resource Property
+	string provider_id = 2;                 				// Id of the Provider of the Resource
+	string resource_address = 3;            				// Address of the Resource
+	repeated string channel_types = 4;      				// List of channel types of the Resource
+	string value = 5;                       				// The actual value of the Property
+}
+
+// ClientProperty defines the model which represents a Client Property
+message ClientProperty {
+	string property_name = 1;               				// Name of the Client Property
+	string value = 2;                       				// The actual value of the Property
+	string client_id = 3;                                   // The ID of the associated Client (if Client property)
+	string property_source = 4;                             // for propertyName=MPAAS-MEDIA-TOKEN provides deviceId (UC3's fully qualified user id)
+}

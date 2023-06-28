@@ -1,0 +1,141 @@
+/**
+* <h1>Workspaces ADF Core CC API Gateway</h1>
+*
+* The following documentation outlines the Workspaces ADF Core CC Eventing API Gateway. The API is composed of a set of 
+* gRPC service definitions and associated Protocol Buffer models. 
+* It serves a concise reference manual containing all the information required to interact with the API. 
+* 
+* This API leverages three primary gRPC service definitions which expose a number of endpoints.
+* These services are defined as:
+* - EventStore
+* - QueryAPI
+* - StreamsAPI
+*
+* Please see the associated documentation below for a more detailed description.
+*/
+syntax = "proto3";
+
+package api.eventing.service;
+
+import "eventing/model/error/error.proto";
+import "eventing/model/client/clientConnectionState.proto";
+import "eventing/model/interaction/context/context.proto";
+import "eventing/model/interaction/interaction.proto";
+import "eventing/model/interaction/media/media.proto";
+import "eventing/model/interaction/media/message.proto";
+import "eventing/model/property/property.proto";
+import "eventing/model/request/request.proto";
+import "eventing/model/resource/resource.proto";
+import "eventing/model/user/user.proto";
+import "eventing/model/common.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "eventing/types";
+
+option java_multiple_files = true;
+option java_package = "com.avaya.adf.service.gateway";
+
+// EventStore exposes an API which facilitates dispatching of events to the ADF Core event store
+service EventStore {
+    // WriteError accepts an Error, writes it to the event stream and returns an Ack
+    rpc WriteError(eventing.model.error.WriteErrorRequest) returns (Ack) {}
+ 
+    // WriteInteraction accepts an Interaction, writes it to the event stream and returns an Ack
+    rpc WriteInteraction(eventing.model.interaction.WriteInteractionRequest) returns (Ack) {}
+     
+    // WriteInteractionContext accepts an InteractionContext, writes it to the event stream and returns an Ack
+    rpc WriteInteractionContext(eventing.model.interaction.context.WriteInteractionContextRequest) returns (Ack) {}
+     
+    // WriteMedia accepts a Media, writes it to the event stream and returns an Ack
+    rpc WriteMedia(eventing.model.interaction.media.WriteMediaRequest) returns (Ack) {}
+     
+    // WriteMediaMessage accepts a InteractionMediaMessage, writes it to the event stream and returns an Ack
+    rpc WriteMediaMessage(eventing.model.interaction.media.WriteMediaMessageRequest) returns (Ack) {}
+     
+    // WriteProperty accepts a Property, writes it to the event stream and returns an Ack
+    rpc WriteProperty(eventing.model.property.WritePropertyRequest) returns (Ack) {}
+ 
+    // WriteRequest accepts a Request, writes it to the event stream and returns an Ack
+    rpc WriteRequest(eventing.model.request.Request) returns (Ack) {}
+
+    // WriteResource accepts a Resource, writes it to the event stream and returns an Ack
+    rpc WriteResource(eventing.model.resource.WriteResourceRequest) returns (Ack) {} 
+     
+    // WriteUser accepts a UserSession, writes it to the event stream and returns an Ack
+    rpc WriteUser(eventing.model.user.WriteUserRequest) returns (Ack) {}
+}
+
+// QueryAPI exposes an API which facilitates read operations on ADF Core model entities
+service QueryAPI {
+    // GetUserResourceList accepts a UserResourceRequest and returns a UserResourceList
+    rpc GetUserResourceList(UserResourceRequest) returns (UserResourceList) {}
+}
+
+// StreamsAPI exposes an API which facilitates streaming ADF Core messages to a consuming client
+service StreamsAPI {
+    // RequestStream is a bi-directional streaming rpc that provides an opportunity to register
+    // a client Subscription to a stream of Request events
+    rpc RequestStream(stream Subscription) returns (stream eventing.model.request.Request) {}
+
+    // ClientConnectionStream is a bi-directional streaming rpc that provides an opportunity to register
+    // a client Subscription to a stream of ClientConnectionState events
+    rpc ClientConnectionStream(stream Subscription) returns (stream eventing.model.client.ClientConnectionState) {}
+}
+
+// Ack defines an acknowledgement of receipt of event
+message Ack {
+    string id = 1;                                  // A unique idenifier indicating acknowledgement of event
+    // Type defines a classification of an event
+    enum Type {
+        UNSPECIFIED = 0;                            // Event type has not been defined
+        ERROR = 1;                                  // An Error event type
+        INTERACTION = 2;                            // An Interaction event type
+        INTERACTION_CONTEXT = 3;                    // An Interaction Context event type
+        INTERACTION_MEDIA = 4;                      // An Interaction Media event type
+        INTERACTION_MEDIA_MESSAGE = 5;              // An Interaction Media Message event type
+        PROPERTY = 6;                               // A Property event type
+        REQUEST = 7;                                // A Request event type
+        RESOURCE_STATE = 8;                         // A Resource State event type
+        USER_STATE = 9;                             // A User State event type
+    }
+    Type event_type = 2;                            // Classification of event type  
+    google.protobuf.Timestamp timestamp = 3;        // Timestamp of acknowledgement of event
+}
+ 
+// Subscription defines a registration configuration to a streaming rpc
+message Subscription {
+    string access_token = 1;                        // Access token string obtained via client credentials grant type flow
+    string client_id = 2;                           // Client identifier representing who the subscription is intended to serve - E.g. ELITE, IXCC
+    string tenant_id = 3;                           // Tenant identifier used to filter events based on the desired tenant
+
+    // Action defines an enum used to register and unregister a stream consumer 
+    enum Action {
+        SUBSCRIBE = 0;                              // Register a stream consumer keyed by tenant 
+        UNSUBSCRIBE = 1;                            // Unregister a stream consumer keyed by tenant
+        STATUS = 2;                                 // Return a list of tenant subscription details, for a given client
+    }
+
+    Action action = 4;                              // Action enum used to subscribe/unsubscribe to a streaming rpc 
+    repeated string provider_ids = 5;               // Ids of the providers used to filter events based on the desired provider
+    eventing.model.Origin origin = 6;               // The origin associated with the subscription
+}
+
+// UserResourceRequest defines a payload used to query a User's list of Resource IDs
+message UserResourceRequest {
+    string user_handle = 1;                         // The User ID or handle used to query a list of Resource IDs
+    string tenant_id = 2;                           // The tenant identifier for the corresponding user
+	string trace_id = 16;                           // Trace ID field for open telemetry
+}
+
+// UserResourceList defines a payload containing a User's handle and a list of Resource IDs associated with that User
+message UserResourceList {
+    string user_handle = 1;                         // The User ID or handle
+    repeated UserResource user_resources = 2;       // A list of Resources associated with the User
+}
+
+message UserResource {
+	string provider_id = 1;                         // ID of the Provider associated with the User's Resource
+	string resource_address = 2;                    // Address of the Resource that the User is assigned
+	string login_id = 3;                            // Station Login ID of the Agent that has acquired the User Resource
+	repeated string channels = 4;                   // List of channel types associated with the User's Resource
+}

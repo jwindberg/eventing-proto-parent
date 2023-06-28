@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+package api.eventing.model.interaction;
+
+import "eventing/model/resource/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "eventing/types";
+
+option java_multiple_files = true;
+option java_package = "com.avaya.adf.model.interaction";
+
+// WriteInteractionRequest defines the payload containing all the necessary fields used for writing an Interaction event
+message WriteInteractionRequest {
+    string external_id = 1;                                                 // Unique identifier of the Interaction
+    string contact_id = 2;                                                  // The ID of the contact assosciated with the Interaction
+    string work_request_id = 3;                                             // The ID of the work associated with the Interaction. Must be set the same for interactions in a consult or conference
+    eventing.model.resource.Channel.Type channel_type = 4;                  // The channel type of the Interaction - Voice, Chat, EMail, Video, etc
+    InteractionType interaction_type = 5;                                   // The type of Interaction, used for calculating capabilities
+    InteractionState state = 6;                                             // Current state of the Interaction
+    string state_reason = 7;                                                // Reason associated with the state change
+    map<string, bool> capabilities = 8;                                     // The capabilities applicable to the Interaction
+    string provider_id = 9;                                                 // ID of the Provider associated with the Resource of the Interaction
+    string resource_address = 10;                                           // Address of the Resource that this Interaction is related to
+    string destination_address = 11;                                        // Address of the called party
+    string originating_address = 12;                                        // Address of the calling party
+    bool is_customer_interaction = 13;                                      // Specifies whether the Interaction has been routed from a customer
+    repeated Participant participants = 14;                                 // The list of participants on the Interaction
+    Direction direction = 15;                                               // The direction of the Interaction - INCOMING, OUTGOING
+    string skill = 16;                                                      // The name of the skill for this Interaction. Applicable for Elite only 
+    string skill_id = 17;                                                   // The ID of the skill for this Interaction. Applicable for Elite only
+    map<string, string> intrinsics = 18;                                    // The intrinsics associated with this Interaction
+    string user_to_user_info = 19;                                          // The user-to-user info of the Interaction
+    google.protobuf.Timestamp established_time = 20;                        // Time at which the Interaction was initiated
+    google.protobuf.Timestamp last_state_change_time = 21;                  // Time of last change on the Interaction, not just state changes
+    string topic = 22;                                                      // The topic name e.g. Email title, skillset, etc
+    bool is_transferred_to_service = 23;                                    // Indicates if an Interaction has been transferred to service
+    bool is_transferred_to_user = 24;                                       // Indicates if an Interaction has been transferred to another agent
+    string tenant_id = 25;                                                  // The ID of the associated tenant
+    string work_code = 26;                                                  // The work/activity code for the Interaction
+    AgentDispositionCode disposition_code = 27;                             // The disposition code for the Interaction
+    bool is_observed = 28 [deprecated=true];                                // Deprecated. Indicates if an Interaction is being observed by a Supervisor. Use ObserveAction instead
+    string external_conversation_id = 29 [deprecated=true];                 // Deprecated. The id of the external conversation associated with this Interaction
+    string trace_id = 30;                                                   // Trace ID field for open telemetry
+    bool is_auto_answer_enabled = 31;                                       // Indicates the Interaction has been auto answered
+    ObserveAction observe_action = 32;					                    // Indicates if the Interaction is being observed/coached/barged-in by a Supervisor
+    bool is_nail_up_call = 33;                                              // Indicates the Interaction represents an outbound nail-up call
+    bool is_acw_extended = 34;                                              // Set to true if ACW has been extended for this Interaction
+    int64 acw_duration = 35;                                                // The length of time in seconds remaining for the Interaction in ACW
+    int64 priority = 36;                                                    // The priority value of this Interacton
+    repeated string attributes = 37;                                        // The List of this Interaction's attributes
+	bool is_recording = 38;            										// Identifies that the interaction is being recorded
+}
+
+// Direction defines an enumeration based on Interaction signaling flow
+enum Direction {
+    DIRECTION_UNSPECIFIED = 0;                                        // UNSPECIFIED
+    DIRECTION_INCOMING = 1;                                           // INCOMING
+    DIRECTION_OUTGOING = 2;                                           // OUTGOING
+}
+
+// InteractionType defines an enumeration consisting of supported Interaction types
+enum InteractionType {
+    INTERACTIONTYPE_UNSPECIFIED = 0;                                  // UNSPECIFIED
+    INTERACTIONTYPE_BARGE_IN = 1 [deprecated=true];                   // Deprecated. BARGE_IN. Use ObserveAction instead
+    INTERACTIONTYPE_CALLED = 2;                                       // CALLED
+    INTERACTIONTYPE_CALLING = 3;                                      // CALLING
+    INTERACTIONTYPE_COACHED = 4 [deprecated=true];                    // Deprecated. COACHED. Use ObserveAction instead
+    INTERACTIONTYPE_COACHING = 5 [deprecated=true];                   // Deprecated. COACHING. Use ObserveAction instead
+    INTERACTIONTYPE_CONSULTED = 6;                                    // CONSULTED
+    INTERACTIONTYPE_CONSULTING = 7;                                   // CONSULTING
+    INTERACTIONTYPE_OBSERVED = 8 [deprecated=true];                   // Deprecated. OBSERVED. Use ObserveAction instead
+    INTERACTIONTYPE_OBSERVING = 9 [deprecated=true];                  // Deprecated. OBSERVING. Use ObserveAction instead
+    INTERACTIONTYPE_TRANSFERRED = 10;                                 // TRANSFERRED
+    INTERACTIONTYPE_CONFERENCED = 11;                                 // CONFERENCED
+}
+
+// InteractionState defines an enumeration consisting of supported Interaction states
+enum InteractionState {
+    INTERACTIONSTATE_UNSPECIFIED = 0;                                 // UNSPECIFIED
+    INTERACTIONSTATE_INITIATED = 1;                                   // INITIATED
+    INTERACTIONSTATE_ALERTING = 2;                                    // ALERTING
+    INTERACTIONSTATE_ACTIVE = 3;                                      // ACTIVE
+    INTERACTIONSTATE_HELD = 4;                                        // HELD
+    INTERACTIONSTATE_FAILED = 5;                                      // FAILED
+    INTERACTIONSTATE_ACW_PENDING = 6;                                 // ACW_PENDING
+    INTERACTIONSTATE_PASSIVE = 7;                                     // PASSIVE
+    INTERACTIONSTATE_ACW = 8;                                         // ACW
+    INTERACTIONSTATE_COMPLETE = 9;                                    // COMPLETE
+    INTERACTIONSTATE_DEFAULT = 10;                                    // DEFAULT
+}
+
+// AgentDispositionCode defines the message used to describe or categorize the Interaction
+message AgentDispositionCode {
+    string code = 1;                            // The selected reason code
+    string name = 2;                            // The name of selected reason code
+    string agent_id = 3;                        // The ID of the agent setting disposition code
+    string agent_name = 4;                      // The name of the agent setting disposition code
+}
+
+// Participant defines individual party within an Interaction dialog
+message Participant {
+    // Type defines a list of supported Participant types
+    enum Type {
+	    UNSPECIFIED = 0;                                              // Participant type unspecified
+	    AGENT = 1;                                                    // A contact center agent servicing work requests
+	    CUSTOMER = 2;                                                 // A customer generally connected to contact center via PBX
+	    SUPERVISOR = 3;                                               // A contact center supervisor managing a number of agents 
+	    CHATBOT = 4;                                                  // An automated chat bot configured for a dialog flow
+    }
+    Type participant_type = 1;                                        // The type of Participant - E.g. AGENT, CUSTOMER
+    string participant_subtype = 2;                                   // Participant subtype 
+    string participant_name = 3;                                      // User friendly Participant display name
+    string participant_address = 4;                                   // Resource address as it relates to the Participant
+    bool muted = 5;                                                   // Represents whether the Participant is muted or not
+    bool is_self = 6;                                                 // Defines whether the Participant is a representation of the current User or another party 
+}
+
+// Observe Action defines a list of action types supported by the Observe\Coach\Barge-In Feature
+enum ObserveAction {
+    OBSERVEACTION_NONE = 0;                                             // Observe Action not specified
+    OBSERVEACTION_OBSERVING = 1;                                        // OBSERVING indicates a Supervisor is observing an Agent Interaction
+    OBSERVEACTION_OBSERVED = 2;                                         // OBSERVED indicates an Agent Interaction is being observed by a Supervisor
+    OBSERVEACTION_COACHING = 3;                                         // COACHING indicates a Supervisor is coaching an Agent Interaction
+    OBSERVEACTION_COACHED = 4;                                          // COACHED indicates an Agent Interaction is being coached by a Supervisor
+    OBSERVEACTION_BARGING_IN = 5;                                       // BARGING_IN indicates a Supervisor has barged in an Agent Interaction
+    OBSERVEACTION_BARGED_IN = 6;                                        // BARGED_IN indicates an Agent Interaction has being barged in on by a Supervisor
+}
