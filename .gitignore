@@ -10,6 +10,8 @@
 
 .idea
 .DS_Store
+*.iml
+target
 
 # AWS User-specific
 .idea/**/aws.xml
