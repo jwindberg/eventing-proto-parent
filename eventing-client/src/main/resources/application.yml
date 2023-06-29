@@ -15,6 +15,9 @@ management:
       livenessState.enabled: true
       readinessState.enabled: true
       show-details: always
+      group:
+        readiness:
+          include: readinessState,grpcChannel
 #  server:
 #    port: 7076
 
